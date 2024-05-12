@@ -21,51 +21,62 @@ img.onload = function () {
   const pixelData = imageData.data  // [r, g, b, a, r, g, b, a, ...]
 
   // Control points and deformed control points.
-  const controlPoints = []
-  const deformedPoints = []
-
   const rows = 6
   const cols = 6
-  for (let j = 0; j < rows; j++) {
-    controlPoints[j] = []
-    deformedPoints[j] = []
-    for (let i = 0; i < cols; i++) {
-      const x = (i / (cols - 1)) * width
-      const y = (j / (rows - 1)) * height
-      controlPoints[j][i] = { x, y }
 
-      const dx = Math.round(Math.random() * 30 * (Math.random() < 0.5 ? -1 : 1))
-      const dy = Math.round(Math.random() * 30 * (Math.random() < 0.5 ? -1 : 1))
-      deformedPoints[j][i] = { x: x + dx, y: y + dy }
+  const tick = () => {
+    const deformedPoints = []
+    const controlPoints = []
+
+    for (let j = 0; j < rows; j++) {
+      controlPoints[j] = []
+      deformedPoints[j] = []
+      for (let i = 0; i < cols; i++) {
+        const x = (i / (cols - 1)) * width
+        const y = (j / (rows - 1)) * height
+        controlPoints[j][i] = { x, y }
+
+        const dx = Math.round(Math.random() * 8 * (Math.random() < 0.5 ? -1 : 1))
+        const dy = Math.round(Math.random() * 8 * (Math.random() < 0.5 ? -1 : 1))
+        deformedPoints[j][i] = { x: x + dx, y: y + dy }
+      }
     }
+
+    // Draw control points on original canvas.
+    originalCtx.clearRect(0, 0, width, height)
+    originalCtx.drawImage(img, 0, 0, width, height)
+    originalCtx.font = '16px Arial'
+    originalCtx.fillStyle = '#ff0000'
+    controlPoints.forEach((row, y) => {
+      row.forEach((point, x) => {
+        const index = (y * cols + x)
+        originalCtx.fillText(index, point.x, point.y)
+      })
+    })
+
+    const deformedData = applyFFD(pixelData, width, height, controlPoints, deformedPoints)
+    const newImageData = new ImageData(deformedData, width, height)
+
+    deformedCtx.clearRect(0, 0, width, height)
+    deformedCtx.putImageData(newImageData, 0, 0)
+
+    // Draw deformed control points on deformed canvas.
+    deformedCtx.font = '16px Arial'
+    deformedCtx.fillStyle = '#ff0000'
+    deformedPoints.forEach((row, y) => {
+      row.forEach((point, x) => {
+        // deformedCtx.beginPath()
+        // deformedCtx.arc(point.x, point.y, 5, 0, 2 * Math.PI)
+        // deformedCtx.fill()
+        const index = (y * cols + x)
+        deformedCtx.fillText(index, point.x, point.y)
+      })
+    })
+
+    setTimeout(tick, 1000 / 30)
   }
 
-  // Draw control points on original canvas.
-  originalCtx.font = '16px Arial'
-  originalCtx.fillStyle = '#ff0000'
-  controlPoints.forEach((row, y) => {
-    row.forEach((point, x) => {
-      const index = (y * cols + x)
-      originalCtx.fillText(index, point.x, point.y)
-    })
-  })
-
-  const deformedData = applyFFD(pixelData, width, height, controlPoints, deformedPoints)
-  const newImageData = new ImageData(deformedData, width, height)
-  deformedCtx.putImageData(newImageData, 0, 0)
-
-  // Draw deformed control points on deformed canvas.
-  deformedCtx.font = '16px Arial'
-  deformedCtx.fillStyle = '#ff0000'
-  deformedPoints.forEach((row, y) => {
-    row.forEach((point, x) => {
-      // deformedCtx.beginPath()
-      // deformedCtx.arc(point.x, point.y, 5, 0, 2 * Math.PI)
-      // deformedCtx.fill()
-      const index = (y * cols + x)
-      deformedCtx.fillText(index, point.x, point.y)
-    })
-  })
+  tick()
 }
 
 img.src = 'test.png'
@@ -73,17 +84,17 @@ img.src = 'test.png'
 function applyFFD (pixelData, width, height, controlPoints, deformedPoints) {
   const deformedData = new Uint8ClampedArray(pixelData.length)
 
-  for (let i = 0; i < width; i++) {
-    for (let j = 0; j < height; j++) {
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
       // 计算当前点的变形位置
-      const [u, v] = getUV(i, j, width, height)
+      const [u, v] = getUV(x, y, width, height)
       const [newX, newY] = deformPoint(u, v, controlPoints, deformedPoints)
 
       // 获取变形后点的颜色值
       const color = getColor(pixelData, width, height, newX, newY)
 
       // 将颜色值赋给变形后的数据
-      const index = (j * width + i) * 4
+      const index = (y * width + x) * 4
       deformedData[index] = color[0]
       deformedData[index + 1] = color[1]
       deformedData[index + 2] = color[2]
