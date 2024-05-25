@@ -107,7 +107,7 @@ const waves = [
 ]
 
 const processor = (stageColor, overlayColor) => {
-  return Math.min(stageColor + overlayColor, 255)  // Linear
+  return Math.min(stageColor + overlayColor, 255)  // Color dodge.
 }
 
 const tick = () => {
