@@ -6,7 +6,6 @@ const stageContext = stageCanvas.getContext('2d')
 
 stageCanvas.width = stageWidth
 stageCanvas.height = stageHeight
-stageCanvas.willReadFrequently = true
 
 const clamp = (value, min, max) => {
   return Math.min(Math.max(value, min), max)
@@ -18,7 +17,7 @@ class WaveCircle {
     const angleIncrement = (2 * Math.PI) / this.numberOfPoints
 
     for (let i = 0; i < this.numberOfPoints; i++) {
-      const angle = i * angleIncrement;
+      const angle = i * angleIncrement
       const waveOffset = this.waveAmplitude * Math.sin(this.waveFrequency * angle) * this.delta
       let x = this.centerX + (this.radius + waveOffset) * Math.cos(angle)
       let y = this.centerY + (this.radius + waveOffset) * Math.sin(angle)
@@ -39,14 +38,13 @@ class WaveCircle {
   }
 
   getImageData () {
-    const canvas = document.createElement('canvas')
-    canvas.width = stageWidth
-    canvas.height = stageHeight
+    const canvas = this.canvas
+    const context = this.context
 
-    const context = canvas.getContext('2d')
     context.clearRect(0, 0, canvas.width, canvas.height)
 
     const path = this.getPath()
+    context.beginPath()
     context.moveTo(path[0].x, path[0].y)
     for (let i = 1; i < path.length; i++) {
       context.lineTo(path[i].x, path[i].y)
@@ -92,6 +90,17 @@ class WaveCircle {
     this.rotationDelta = rotationDelta
     this.lineWidth = lineWidth
     this.lineColor = lineColor
+
+    const canvas = document.createElement('canvas')
+    canvas.width = stageWidth
+    canvas.height = stageHeight
+
+    const context = canvas.getContext('2d', {
+      willReadFrequently: true
+    })
+
+    this.canvas = canvas
+    this.context = context
   }
 }
 
@@ -107,52 +116,26 @@ const waves = [
 ]
 
 const processor = (stageColor, overlayColor) => {
-  return Math.min(stageColor + overlayColor, 255)  // Color dodge.
+  return clamp(stageColor + overlayColor, 0, 255)  // Color dodge.
 }
 
 const tick = () => {
   stageContext.clearRect(0, 0, stageCanvas.width, stageCanvas.height)
 
-  const waveImageDatas = []
+  const imageData = new ImageData(stageWidth, stageHeight)
 
   for (const wave of waves) {
     wave.tick()
     const waveImageData = wave.getImageData()
-    waveImageDatas.push(waveImageData)
-  }
-
-  const imageData = new ImageData(stageWidth, stageHeight)
-  for (let i = 0; i < imageData.data.length; i += 4) {
-    let r = 0
-    let g = 0
-    let b = 0
-
-    for (let j = 0; j < waveImageDatas.length; j++) {
-      const waveImageData = waveImageDatas[j]
-      const _r = waveImageData.data[i]
-      const _g = waveImageData.data[i + 1]
-      const _b = waveImageData.data[i + 2]
-      const _a = waveImageData.data[i + 3]
-
-      if (j === 0) {
-        r = _r
-        g = _g
-        b = _b
-      } else {
-        r = processor(r, _r)
-        g = processor(g, _g)
-        b = processor(b, _b)
-      }
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      imageData.data[i] = processor(imageData.data[i], waveImageData.data[i])
+      imageData.data[i + 1] = processor(imageData.data[i + 1], waveImageData.data[i + 1])
+      imageData.data[i + 2] = processor(imageData.data[i + 2], waveImageData.data[i + 2])
+      imageData.data[i + 3] = 255
     }
-
-    imageData.data[i] = clamp(r, 0, 255)
-    imageData.data[i + 1] = clamp(g, 0, 255)
-    imageData.data[i + 2] = clamp(b, 0, 255)
-    imageData.data[i + 3] = 255
   }
 
   stageContext.putImageData(imageData, 0, 0)
-
   requestAnimationFrame(tick)
 }
 
