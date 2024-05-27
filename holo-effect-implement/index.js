@@ -13,7 +13,7 @@ const clamp = (value, min, max) => {
 
 class WaveCircle {
   getPath () {
-    const path = []
+    const path = this._path || []
     const angleIncrement = (2 * Math.PI) / this.numberOfPoints
 
     for (let i = 0; i < this.numberOfPoints; i++) {
@@ -21,7 +21,13 @@ class WaveCircle {
       const waveOffset = this.waveAmplitude * Math.sin(this.waveFrequency * angle) * this.delta
       let x = this.centerX + (this.radius + waveOffset) * Math.cos(angle)
       let y = this.centerY + (this.radius + waveOffset) * Math.sin(angle)
-      path.push({ x, y })
+
+      if (path[i]) {
+        path[i].x = x
+        path[i].y = y
+      } else {
+        path.push({ x, y })
+      }
     }
 
     // Rotate the path.
@@ -34,6 +40,7 @@ class WaveCircle {
       path[i].y = x * sin + y * cos + this.centerY
     }
 
+    this._path = path
     return path
   }
 
@@ -120,8 +127,6 @@ const processor = (stageColor, overlayColor) => {
 }
 
 const tick = () => {
-  stageContext.clearRect(0, 0, stageCanvas.width, stageCanvas.height)
-
   const imageData = new ImageData(stageWidth, stageHeight)
 
   for (const wave of waves) {
