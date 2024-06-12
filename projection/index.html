@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projection</title>
+    <style>
+      canvas {
+        background-color: #222;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="app-canvas" width="800" height="800"></canvas>
+
+    <div>
+      <label>
+        <span>f</span>
+        <input id="range-f" type="range" value="1" min="0" max="10" step="0.1">
+        <span id="range-f-text">1</span>
+      </label>
+
+      <br />
+
+      <label>
+        <span>d</span>
+        <input id="range-d" type="range" value="3" min="0" max="10" step="0.1">
+        <span id="range-d-text">3</span>
+      </label>
+
+      <br />
+
+      <label>
+        <span>Rotation</span>
+        <input id="range-rotation" type="range" value="0" min="0" max="360" step="1">
+        <span id="range-rotation-text">0</span>
+      </label>
+    </div>
+
+    <script src="math.min.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>
